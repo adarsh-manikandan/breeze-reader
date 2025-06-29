@@ -1,7 +1,7 @@
 {
-  "name": "bionic-reader",
+  "name": "breeze",
   "version": "1.0.0",
-  "description": "A bionic reading tool with EPUB support",
+  "description": "A breeze reading tool with EPUB support",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
@@ -25,7 +25,7 @@
     "vite": "^4.4.5"
   },
   "keywords": [
-    "bionic-reading",
+    "breeze-reading",
     "epub",
     "react"
   ],

@@ -1,11 +1,11 @@
-# Bionic Reader
+# Breeze
 
-A modern web application that converts text to bionic reading format, making it easier and faster to read. The app also supports EPUB file import for reading entire books with bionic formatting.
+A modern web application that converts text to breeze reading format, making it easier and faster to read. The app also supports EPUB file import for reading entire books with breeze formatting.
 
 ## Features
 
-- **Bionic Reading**: Converts regular text to bionic format by emphasizing the beginning of words
-- **EPUB Support**: Import and read entire EPUB books with bionic formatting
+- **Breeze Reading**: Converts regular text to breeze format by emphasizing the beginning of words
+- **EPUB Support**: Import and read entire EPUB books with breeze formatting
 - **Chapter Navigation**: Navigate through book chapters with a table of contents
 - **Bookmarking**: Save your reading progress
 - **Font Size Control**: Adjust text size for comfortable reading
@@ -51,14 +51,14 @@ npm run build
 
 ### Text Mode
 1. Paste or type your text in the input area
-2. Click "Convert" to transform it to bionic format
+2. Click "Convert" to transform it to breeze format
 3. Use the "Focus" button to hide the input panel for distraction-free reading
 4. Adjust font size using the controls in the header
 5. Copy the converted text using the copy button
 
 ### EPUB Mode
 1. Click "Import EPUB" to upload an EPUB file
-2. The book will be parsed and displayed in bionic format
+2. The book will be parsed and displayed in breeze format
 3. Navigate between chapters using the previous/next buttons
 4. Use the table of contents (menu button) to jump to specific chapters
 5. Bookmark chapters for later reference
@@ -71,9 +71,9 @@ npm run build
 - **Lucide React**: Beautiful icon library
 - **EPUB Parser**: Custom ZIP-based EPUB parser
 
-## How Bionic Reading Works
+## How Breeze Reading Works
 
-Bionic reading emphasizes the first few letters of each word, creating visual fixation points that help your brain process text more efficiently. This technique can improve reading speed and comprehension by reducing cognitive load.
+Breeze reading emphasizes the first few letters of each word, creating visual fixation points that help your brain process text more efficiently. This technique can improve reading speed and comprehension by reducing cognitive load.
 
 ## License
 

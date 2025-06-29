@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import JSZip from 'jszip';
 import { Eye, EyeOff, Type, FileText, Zap, Copy, Check, Minus, Plus, BookOpen, ChevronLeft, ChevronRight, Upload, Menu, X, Bookmark, BookmarkCheck } from 'lucide-react';
 
-const BionicReader = () => {
+const BreezeReader = () => {
   const [inputText, setInputText] = useState('');
   const [showInput, setShowInput] = useState(true);
-  const [bionicText, setBionicText] = useState('');
+  const [breezeText, setBreezeText] = useState('');
   const [isTransforming, setIsTransforming] = useState(false);
   const [displayedText, setDisplayedText] = useState('');
   const [hasTransformed, setHasTransformed] = useState(false);
@@ -26,8 +26,11 @@ const BionicReader = () => {
   // Store image Blob URLs for cleanup
   const [imageBlobs, setImageBlobs] = useState({});
 
-  // Convert text to bionic reading format
-  const convertToBionic = (text) => {
+  // Exporting state
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Convert text to breeze reading format
+  const convertToBreeze = (text) => {
     if (!text.trim()) return '';
     
     return text.split(/(\s+)/).map((word, index) => {
@@ -87,20 +90,20 @@ const BionicReader = () => {
     return files;
   };
 
-  // Helper: Recursively walk and bionic-transform only text nodes in-place
-  function bionicTransformDomInPlace(node) {
+  // Helper: Recursively walk and breeze-transform only text nodes in-place
+  function breezeTransformDomInPlace(node) {
     if (node.nodeType === Node.TEXT_NODE) {
       if (node.textContent.trim().length > 0) {
-        // Create a span and set its innerHTML to the bionic version
+        // Create a span and set its innerHTML to the breeze version
         const span = document.createElement('span');
-        span.innerHTML = convertToBionic(node.textContent);
+        span.innerHTML = convertToBreeze(node.textContent);
         node.parentNode.replaceChild(span, node);
       }
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       // Copy the childNodes array because we'll be modifying the DOM
       const children = Array.from(node.childNodes);
       for (let child of children) {
-        bionicTransformDomInPlace(child);
+        breezeTransformDomInPlace(child);
       }
     }
   }
@@ -164,42 +167,61 @@ const BionicReader = () => {
     };
   }, [imageBlobs]);
 
-  // Export Bionic EPUB logic (patched)
-  const exportBionicEpub = async () => {
-    if (!epubContent) return;
-    const zip = await JSZip.loadAsync(epubContent);
-    const fileNames = Object.keys(zip.files);
-    const parser = new DOMParser();
-    const serializer = new XMLSerializer();
+  // Export Breeze EPUB logic (patched)
+  const exportBreezeEpub = async () => {
+    console.log('Export button clicked');
+    if (!epubContent) {
+      alert('No EPUB content available to export. Please import an EPUB file first.');
+      console.log('No epubContent');
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const zip = await JSZip.loadAsync(epubContent);
+      const fileNames = Object.keys(zip.files);
+      const parser = new DOMParser();
+      const serializer = new XMLSerializer();
+      console.log('Loaded zip, files:', fileNames);
 
-    for (const fileName of fileNames) {
-      if (fileName.endsWith('.xhtml') || fileName.endsWith('.html')) {
-        const original = await zip.files[fileName].async('text');
-        let doc;
-        try {
-          doc = parser.parseFromString(original, 'application/xhtml+xml');
-        } catch (e) {
-          continue;
-        }
-        const body = doc.querySelector('body');
-        if (body) {
-          bionicTransformDomInPlace(body);
-          const newContent = serializer.serializeToString(doc);
-          zip.file(fileName, newContent);
+      for (const fileName of fileNames) {
+        if (fileName.endsWith('.xhtml') || fileName.endsWith('.html')) {
+          const original = await zip.files[fileName].async('text');
+          let doc;
+          try {
+            doc = parser.parseFromString(original, 'application/xhtml+xml');
+          } catch (e) {
+            console.log('Failed to parse', fileName, e);
+            continue;
+          }
+          const body = doc.querySelector('body');
+          if (body) {
+            breezeTransformDomInPlace(body);
+            const newContent = serializer.serializeToString(doc);
+            zip.file(fileName, newContent);
+          }
         }
       }
+      
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (bookTitle ? bookTitle.replace(/\s+/g, '_') : 'breeze') + '_breeze.epub';
+      document.body.appendChild(a);
+      a.click();
+      
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+      alert('Exported Breeze EPUB! Check your downloads.');
+      console.log('Exported Breeze EPUB!');
+    } catch (error) {
+      console.error('Error exporting EPUB:', error);
+      alert('Failed to export EPUB. Please try again.');
+    } finally {
+      setIsExporting(false);
     }
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = (bookTitle ? bookTitle.replace(/\s+/g, '_') : 'bionic') + '_bionic.epub';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 100);
   };
 
   // Parse EPUB file
@@ -310,16 +332,16 @@ const BionicReader = () => {
       setIsEpubMode(true);
       setShowInput(false);
       
-      // Convert first chapter to bionic (with formatting)
+      // Convert first chapter to breeze (with formatting)
       const first = chapters[0];
-      let firstBionic = '';
+      let firstBreeze = '';
       if (first && first.rawHtml) {
-        firstBionic = bionicTransformHtmlString(first.rawHtml, first.basePath);
+        firstBreeze = breezeTransformHtmlString(first.rawHtml, first.basePath);
       } else {
-        firstBionic = convertToBionic(first.content);
+        firstBreeze = convertToBreeze(first.content);
       }
-      setBionicText(firstBionic);
-      setDisplayedText(firstBionic);
+      setBreezeText(firstBreeze);
+      setDisplayedText(firstBreeze);
       setHasTransformed(true);
       
     } catch (error) {
@@ -347,14 +369,14 @@ const BionicReader = () => {
       // Use the original HTML for the chapter, if available
       const chapter = chapters[chapterIndex];
       if (chapter && chapter.rawHtml) {
-        const bionicHtml = bionicTransformHtmlString(chapter.rawHtml, chapter.basePath);
-        setBionicText(bionicHtml);
-        setDisplayedText(bionicHtml);
+        const breezeHtml = breezeTransformHtmlString(chapter.rawHtml, chapter.basePath);
+        setBreezeText(breezeHtml);
+        setDisplayedText(breezeHtml);
       } else {
         // fallback to plain text
-        const chapterBionic = convertToBionic(chapter.content);
-        setBionicText(chapterBionic);
-        setDisplayedText(chapterBionic);
+        const chapterBreeze = convertToBreeze(chapter.content);
+        setBreezeText(chapterBreeze);
+        setDisplayedText(chapterBreeze);
       }
       setShowToc(false);
     }
@@ -399,7 +421,7 @@ const BionicReader = () => {
   // Regular text mode functions
   const animateText = (text) => {
     setIsTransforming(true);
-    setBionicText(text);
+    setBreezeText(text);
     
     setTimeout(() => {
       setDisplayedText(text);
@@ -410,14 +432,14 @@ const BionicReader = () => {
   const handleTransform = () => {
     if (!inputText.trim()) return;
     
-    const converted = convertToBionic(inputText);
-    setBionicText(converted);
+    const converted = convertToBreeze(inputText);
+    setBreezeText(converted);
     setHasTransformed(true);
     setShowInput(false);
     animateText(converted);
   };
 
-  const copyBionicText = async () => {
+  const copyBreezeText = async () => {
     if (!displayedText) return;
     
     const tempDiv = document.createElement('div');
@@ -440,7 +462,7 @@ const BionicReader = () => {
     setCurrentChapter(0);
     setBookTitle('');
     setDisplayedText('');
-    setBionicText('');
+    setBreezeText('');
     setHasTransformed(false);
     setShowInput(true);
     setInputText('');
@@ -448,13 +470,13 @@ const BionicReader = () => {
 
   useEffect(() => {
     if (hasTransformed && inputText !== inputText) {
-      setBionicText('');
+      setBreezeText('');
       setDisplayedText('');
       setHasTransformed(false);
     }
   }, [inputText]);
 
-  const sampleText = `Bionic reading is a reading method that highlights the beginning of words to guide your eyes and improve reading speed. This technique can help reduce cognitive load and increase comprehension by making text processing more efficient. The method works by creating visual fixation points that help your brain process text more quickly while maintaining understanding. Try pasting your own text above to experience the difference and see how this enhanced reading format can improve your reading flow!`;
+  const sampleText = `Breeaze reading is a reading method that highlights the beginning of words to guide your eyes and improve reading speed. This technique can help reduce cognitive load and increase comprehension by making text processing more efficient. The method works by creating visual fixation points that help your brain process text more quickly while maintaining understanding. Try pasting your own text above to experience the difference and see how this enhanced reading format can improve your reading flow!`;
 
   // Helper: Remove all <img> tags from HTML string
   function removeImagesFromHtml(htmlString) {
@@ -465,8 +487,8 @@ const BionicReader = () => {
     return doc.body.innerHTML;
   }
 
-  // In bionicTransformHtmlString, remove images after bionic transform
-  function bionicTransformHtmlString(htmlString, basePath = '') {
+  // In breezeTransformHtmlString, remove images after breeze transform
+  function breezeTransformHtmlString(htmlString, basePath = '') {
     const parser = new DOMParser();
     let doc = parser.parseFromString(htmlString, 'application/xhtml+xml');
     let body = doc.querySelector('body');
@@ -475,7 +497,7 @@ const BionicReader = () => {
       body = doc.body;
     }
     if (body) {
-      bionicTransformDomInPlace(body);
+      breezeTransformDomInPlace(body);
       // Remove images
       const htmlNoImages = removeImagesFromHtml(body.innerHTML);
       return htmlNoImages;
@@ -496,9 +518,9 @@ const BionicReader = () => {
               <h1
                 className="text-xl font-light truncate max-w-xs md:max-w-md lg:max-w-2xl"
                 style={{ color: '#5a4a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                title={isEpubMode ? bookTitle : 'Bionic Reader'}
+                title={isEpubMode ? bookTitle : 'Breeze'}
               >
-                {isEpubMode ? bookTitle : 'Bionic Reader'}
+                {isEpubMode ? bookTitle : 'Breeze'}
               </h1>
               {isEpubMode && chapters.length > 0 && (
                 <p className="text-xs" style={{ color: '#a0957f' }}>
@@ -584,12 +606,12 @@ const BionicReader = () => {
                 </button>
 
                 <button
-                  onClick={exportBionicEpub}
+                  onClick={exportBreezeEpub}
                   className="flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-200 hover:shadow-sm"
                   style={{ backgroundColor: '#f5f1eb', color: '#6b5b4d', border: '1px solid #e8e2d9' }}
                 >
                   <Upload className="w-4 h-4" />
-                  <span className="text-sm">Export Bionic EPUB</span>
+                  <span className="text-sm">Export Breeze EPUB</span>
                 </button>
               </>
             )}
@@ -623,7 +645,7 @@ const BionicReader = () => {
                 </div>
 
                 <button
-                  onClick={copyBionicText}
+                  onClick={copyBreezeText}
                   className="flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200 hover:shadow-sm"
                   style={{ 
                     backgroundColor: copied ? '#22c55e' : '#f5f1eb', 
@@ -820,7 +842,7 @@ const BionicReader = () => {
                   }}
                   dangerouslySetInnerHTML={{ __html: displayedText }}
                 />
-              ) : bionicText ? (
+              ) : breezeText ? (
                 <div 
                   className="leading-loose font-light tracking-wide"
                   style={{ 
@@ -829,7 +851,7 @@ const BionicReader = () => {
                     lineHeight: '1.7',
                     fontSize: `${fontSize}px`
                   }}
-                  dangerouslySetInnerHTML={{ __html: bionicText }}
+                  dangerouslySetInnerHTML={{ __html: breezeText }}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -872,8 +894,29 @@ const BionicReader = () => {
           Enhanced reading through subtle text emphasis {isEpubMode && '• Now reading full books with EPUB support'}
         </div>
       </div>
+
+      {/* Exporting Toast */}
+      {isExporting && (
+        <div style={{
+          position: 'fixed',
+          top: 24,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#8b7355',
+          color: 'white',
+          padding: '12px 32px',
+          borderRadius: '999px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          zIndex: 9999,
+          fontWeight: 500,
+          fontSize: 16,
+          letterSpacing: 1,
+        }}>
+          Exporting EPUB...
+        </div>
+      )}
     </div>
   );
 };
 
-export default BionicReader; 
+export default BreezeReader; 

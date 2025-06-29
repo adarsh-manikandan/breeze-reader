@@ -1,8 +1,8 @@
-import BionicReader from './components/BionicReader'
+import BreezeReader from './components/BreezeReader'
 
 function App() {
   return (
-    <BionicReader />
+    <BreezeReader />
   )
 }
 
